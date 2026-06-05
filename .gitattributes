@@ -1,0 +1,9 @@
+# Binary source assets via Git LFS (keeps the git history light)
+*.ai  filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+
+# PNG/SVG stay as normal git objects (small, and useful as diffable references).
+# If the repo ever bloats, you can also LFS-track large PNGs:
+# *.png filter=lfs diff=lfs merge=lfs -text
