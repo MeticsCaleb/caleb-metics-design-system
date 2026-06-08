@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sequence player — full-cut review harness</title>
+<!-- ============================================================================
+     SEQUENCE PLAYER (review util — NOT a render clip, so it is exempt from the
+     animation-kit render contract).
+
+     Purpose: composite N cue clips on ONE master playhead over a talking-head /
+     a-roll placeholder, to review the whole cut in sequence before editing.
+
+       • Color-coded scrubber: orange = SOLID, blue = ALPHA, grey = TH (a-roll).
+       • Transport: Space = play/pause, ← / → = step one frame.
+       • Each segment is { src | html | b64, start, dur, kind, label }.
+
+     ── STANDALONE / OFFLINE EXPORT (the portable trick) ──────────────────────
+     A plain <iframe src="cue.html"> only resolves + runs its scripts in the
+     AUTHORING environment, and the parent CANNOT drive a file:// `src` iframe
+     (cross-frame control is blocked there). The fix:
+
+       1. Embed each cue as BASE64 and load it via a same-origin srcdoc iframe:
+              f.srcdoc = decodeB64(seg.b64);      // same-origin ⇒ parent may call
+              f.contentWindow.setStoryTime(local)  //   into it every frame
+       2. Inline every referenced asset (logos, fonts) as data: URIs so nothing
+          depends on the filesystem.
+
+     Why base64 and not a raw HTML string? An embedded cue contains its own
+     </script>, which would prematurely close the parent <script> during HTML
+     parsing. Base64 has no '<' so it sidesteps that trap entirely.
+     (This demo encodes its cues at runtime to show the round-trip; a true export
+     pre-encodes them so no raw cue markup appears in this file at all.)
+     ============================================================================ -->
+<style>
+  :root{ --solid:#FB7A1C; --alpha:#3EA6FF; --th:#7A7D82; --accent:#FB411C; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0c0d10;color:#e7e9ec;font:500 14px/1.4 system-ui,sans-serif;overflow:hidden}
+  .wrap{display:flex;flex-direction:column;height:100%}
+  .screen{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden}
+  /* 1920×1080 viewport, scaled to fit the review window */
+  .viewport{position:relative;width:1920px;height:1080px;transform-origin:center center;flex:none}
+  /* talking-head / a-roll placeholder — always the bottom layer */
+  .th{position:absolute;inset:0;background:
+        radial-gradient(120% 90% at 50% 30%,#2b2f3a 0%,#15171c 60%,#0b0c10 100%);
+      display:flex;align-items:flex-end;justify-content:center;padding-bottom:90px}
+  .th span{font:700 34px/1 system-ui;letter-spacing:.32em;color:#6b6f77;text-transform:uppercase}
+  .cue{position:absolute;inset:0;border:0;background:transparent;opacity:0;pointer-events:none}
+  .cue.on{opacity:1}
+  /* controls */
+  .bar{flex:none;padding:12px 16px;background:#101217;border-top:1px solid #1e2128;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:14px}
+  button{all:unset;cursor:pointer;background:#1c1f27;padding:7px 14px;border-radius:8px;font-weight:700}
+  button:hover{background:#262a34}
+  .tc{font:700 13px/1 'JetBrains Mono',ui-monospace,monospace;color:#aeb2ba;min-width:128px}
+  .legend{display:flex;gap:16px;margin-left:auto;font-size:12px;color:#9aa0a8}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  /* scrubber */
+  .scrub{position:relative;height:46px;background:#0a0b0e;border-radius:8px;overflow:hidden;cursor:pointer;user-select:none}
+  .seg{position:absolute;top:7px;height:32px;border-radius:5px;display:flex;align-items:center;padding:0 9px;
+       font:700 12px/1 system-ui;color:#0b0c10;white-space:nowrap;overflow:hidden}
+  .seg.solid{background:var(--solid)} .seg.alpha{background:var(--alpha)} .seg.th{background:var(--th)}
+  .play{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 8px #fff;pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="screen">
+      <div class="viewport" id="viewport">
+        <div class="th"><span>A-roll · talking head</span></div>
+        <!-- cue iframes injected here -->
+      </div>
+    </div>
+    <div class="bar">
+      <div class="row">
+        <button onclick="toggle()" id="pp">▶ Play</button>
+        <button onclick="step(-1)">◀ Frame</button>
+        <button onclick="step(1)">Frame ▶</button>
+        <span class="tc" id="tc">0.00 / 0.00s</span>
+        <span class="legend">
+          <span><i style="background:var(--solid)"></i>SOLID</span>
+          <span><i style="background:var(--alpha)"></i>ALPHA</span>
+          <span><i style="background:var(--th)"></i>TH / a-roll</span>
+        </span>
+      </div>
+      <div class="scrub" id="scrub"><div class="play" id="playhead"></div></div>
+    </div>
+  </div>
+<script>
+const FPS=30;
+
+/* ── helpers: UTF-8-safe base64 round-trip ─────────────────────────────────── */
+const encB64 = html => btoa(unescape(encodeURIComponent(html)));
+const decB64 = b64  => decodeURIComponent(escape(atob(b64)));
+
+/* ── a tiny t-driven cue builder (stands in for real animation-kit clips) ─────
+   Real use: drop your own clips in as { src:'clips/foo.html', ... } for authoring,
+   or { b64:'<pre-encoded>', ... } for a standalone export. The closing script tag
+   is split as <\/script> so this builder string can't close the parent script. */
+function demoCue({dur, solid, label, color}){
+  const bg = solid ? 'background:#0A0C12;' : 'background:transparent;';
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+    html,body{margin:0;height:100%;overflow:hidden;${bg}font-family:Inter,system-ui,sans-serif}
+    .stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+    .big{font-weight:900;font-size:300px;letter-spacing:-.03em;color:#fff;text-shadow:0 10px 60px rgba(0,0,0,.55)}
+    .chip{font:800 64px/1 Inter;letter-spacing:.06em;color:#fff;background:${color};padding:22px 46px;border-radius:9999px;
+          position:absolute;left:120px;bottom:150px}
+  </style></head><body>
+    <div class="stage">${solid?`<div class="big" id="o">${label}</div>`:`<div class="chip" id="o">${label}</div>`}</div>
+    <script>
+      const o=document.getElementById('o'); const DUR=${dur};
+      const eo=u=>1-Math.pow(1-Math.max(0,Math.min(1,u)),3);
+      function render(t){
+        const inn=eo(t/0.5), out=t>DUR-0.5?eo((DUR-t)/0.5):1;
+        o.style.opacity=Math.max(0,Math.min(inn,out));
+        o.style.transform='translateY('+(1-inn)*28+'px) scale('+(0.92+0.08*inn)+')';
+      }
+      window.setStoryTime=s=>render(Math.max(0,Math.min(DUR,s)));
+      window.STORY_DURATION=DUR; render(0); window.__storyReady=true;
+    <\/script>
+  </body></html>`;
+}
+
+/* ── the sequence: per-segment { start, dur, kind, label, (src|html|b64) } ──── */
+const SEGMENTS=[
+  { start:0.0, dur:3.0, kind:'solid', label:'$1,000,000', html:demoCue({dur:3.0,solid:true, label:'$1,000,000', color:'#FB411C'}) },
+  { start:3.0, dur:4.0, kind:'alpha', label:'SECURE',     html:demoCue({dur:4.0,solid:false,label:'SECURE',     color:'#FB411C'}) },
+  { start:7.0, dur:2.5, kind:'solid', label:'CHAPTER 1',  html:demoCue({dur:2.5,solid:true, label:'CHAPTER 1',  color:'#FB411C'}) },
+];
+const TOTAL = Math.max(...SEGMENTS.map(s=>s.start+s.dur));
+
+/* ── build cue iframes (srcdoc + base64; falls back to src for authoring) ───── */
+const viewport=document.getElementById('viewport');
+SEGMENTS.forEach(seg=>{
+  const f=document.createElement('iframe');
+  f.className='cue'; f.setAttribute('scrolling','no');
+  if(seg.src) f.src=seg.src;
+  else f.srcdoc = decB64(seg.b64 || encB64(seg.html));   // same-origin ⇒ we can drive it
+  seg._f=f; seg._ready=false; f.addEventListener('load',()=>{seg._ready=true;});
+  viewport.appendChild(f);
+});
+
+/* ── playback over the master playhead ─────────────────────────────────────── */
+let T=0, playing=false, last=0, raf=null;
+function frame(now){
+  T += (now-last)/1000; last=now;
+  if(T>=TOTAL){ T=TOTAL; playing=false; document.getElementById('pp').textContent='▶ Play'; }
+  tick(); if(playing) raf=requestAnimationFrame(frame);
+}
+function toggle(){ playing=!playing; document.getElementById('pp').textContent=playing?'❚❚ Pause':'▶ Play';
+  if(playing){ if(T>=TOTAL)T=0; last=performance.now(); raf=requestAnimationFrame(frame);} else cancelAnimationFrame(raf); }
+function step(dir){ playing=false; cancelAnimationFrame(raf); document.getElementById('pp').textContent='▶ Play';
+  T=Math.max(0,Math.min(TOTAL, T+dir/FPS)); tick(); }
+function seek(x){ playing=false; cancelAnimationFrame(raf); document.getElementById('pp').textContent='▶ Play'; T=Math.max(0,Math.min(TOTAL,x)); tick(); }
+
+function tick(){
+  SEGMENTS.forEach(seg=>{
+    const local=T-seg.start, on=local>=0 && local<=seg.dur;
+    seg._f.classList.toggle('on', on);
+    if(on && seg._ready){ try{ seg._f.contentWindow.setStoryTime(local); }catch(e){} }
+  });
+  document.getElementById('playhead').style.left=(T/TOTAL*100)+'%';
+  document.getElementById('tc').textContent=T.toFixed(2)+' / '+TOTAL.toFixed(2)+'s';
+}
+
+/* ── scrubber: color-coded bands by kind ───────────────────────────────────── */
+const scrub=document.getElementById('scrub');
+SEGMENTS.forEach(seg=>{
+  const b=document.createElement('div');
+  b.className='seg '+seg.kind;
+  b.style.left=(seg.start/TOTAL*100)+'%'; b.style.width=(seg.dur/TOTAL*100)+'%';
+  b.textContent=seg.label; b.title=seg.kind.toUpperCase()+' · '+seg.dur+'s';
+  scrub.appendChild(b);
+});
+scrub.addEventListener('click',e=>{ const r=scrub.getBoundingClientRect(); seek((e.clientX-r.left)/r.width*TOTAL); });
+
+/* ── transport keys + responsive scale ─────────────────────────────────────── */
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){ e.preventDefault(); toggle(); }
+  else if(e.code==='ArrowLeft'){ e.preventDefault(); step(-1); }
+  else if(e.code==='ArrowRight'){ e.preventDefault(); step(1); }
+});
+function fit(){ const s=Math.min(innerWidth/1920,(innerHeight-150)/1080); viewport.style.transform='scale('+s+')'; }
+addEventListener('resize',fit); fit(); tick();
+</script>
+</body>
+</html>

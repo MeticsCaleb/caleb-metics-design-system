@@ -121,6 +121,8 @@ Ship each new skin as a `skins/tokens.<name>.css` file whose header comment name
 
 **Imagery vibe.** No stock photography. Imagery = **real product logos** (used as-is, never redrawn) + the channel's flat-emoji icon set + simple geometric inline SVG icons. The cinematic style adds film-grain + vignette for a warm-cool, slightly cinematic feel; the warm style is clean and paper-bright.
 
+**Reviewing a full cut (sequence player).** `animation-kit/sequence-player.example.html` composites N cue clips on **one master playhead** over a talking-head / a-roll placeholder, so the whole sequence can be reviewed before editing. It has a **color-coded scrubber** (orange = SOLID, blue = ALPHA, grey = TH), `Space` / `←` / `→` transport, and a per-segment `{ src, start, dur, kind, label }` model. **Standalone export trick:** to make a sequence file portable/offline, embed each cue as **base64** and load it into a **same-origin `srcdoc` iframe** (`f.srcdoc = decode(b64)`), and inline referenced assets as **data URIs**. Why: a plain `<iframe src>` only resolves and runs its scripts in the authoring environment, and the parent **can't** drive a `file://` `src` iframe (cross-frame control is blocked there) — `srcdoc` is same-origin so the parent can call `setStoryTime` every frame, and base64 sidesteps the `</script>`-in-HTML parsing trap.
+
 ---
 
 ## ICONOGRAPHY
@@ -146,7 +148,7 @@ The channel carries meaning with icons, so iconography is central — and it com
 - `SKILL.md` — Agent-Skills-compatible entry point (for Claude Code download).
 - `colors_and_type.css` — base tokens, the two house styles, and semantic type roles.
 
-**`animation-kit/`** — the render-safe HTML harness (STRICT contract). `_template.html` (golden template — copy per clip), `tokens.css` (the swappable brand skin), `validate.js` (preflight), `PROJECT_INSTRUCTIONS.md` + the two Claude-Design playbooks, `skins/tokens.coveron.css` (a worked skin), and `components/` (lower-third, explainer, youtube-link-card reference implementations).
+**`animation-kit/`** — the render-safe HTML harness (STRICT contract). `_template.html` (golden template — copy per clip), `tokens.css` (the swappable brand skin), `validate.js` (preflight), `sequence-player.example.html` (full-cut review harness — review util, not a render clip), `PROJECT_INSTRUCTIONS.md` + the two Claude-Design playbooks, `skins/` (`tokens.coveron.css` worked skin + `_skin-template.css` stub: tokens + mood + motif), and `components/` (lower-third, explainer, youtube-link-card, chapter-card reference implementations).
 
 **`examples/`** — two reference style sets, five archetypes each (lower-third, number-pop, link-on-screen, explainer, cta) + motion specs. `style-light/` (warm) and `style-dark/` (cinematic). **Technical references, not visual templates.**
 
