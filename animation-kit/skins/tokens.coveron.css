@@ -1,6 +1,12 @@
 /* ============================================================================
    BRAND TOKENS — COVERON  (first real skin; verified from coveron.com live CSS)
    Paste this :root block into the BRAND TOKENS slot at the top of each clip.
+   ----------------------------------------------------------------------------
+   A skin = (a) tokens + (b) mood + (c) motifs. For Coveron:
+   • MOOD   — dark-cinematic: accent radial glow + vignette + ~6% film-grain on
+              SOLID frames; calm, security-serious, evergreen.
+   • MOTIFS — radar-sweep, shield, lock, breach-alert chip. Reuse this small kit
+              across the video for identity beyond the accent color.
    ============================================================================ */
 :root{
   --accent:        #FB411C;   /* Coveron orange-red */

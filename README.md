@@ -74,6 +74,13 @@ Always full `https://meticsmedia.com/<slug>` links; bold the platform + offer up
 
 **Color — one accent over a near-monochrome base.** Each skin is essentially **one signature accent** (the product's color) used for highlights, key numbers, CTAs, and arrows, sitting on a **dark base** or a **light base**. A second accent (`--accent-2`) appears sparingly for highlights. Neutral default is Coveron orange-red `#FB411C`; the two house styles use blue accents. Colors are **never hardcoded** — always `var(--…)`. See `colors_and_type.css` and `animation-kit/tokens.css`.
 
+**A skin is a mood + motif kit, not just color/font.** A per-video skin bundles three things, not one:
+- **(a) Tokens** — `--accent` (+ optional `--accent-2`), `--bg-dark` / `--bg-light`, `--text-*`, `--muted`, and the font choice. The mechanical, swappable layer.
+- **(b) A mood** — the atmosphere SOLID frames inherit. E.g. Coveron's *dark-cinematic*: accent radial glow + vignette + ~6% film-grain. The mood is what makes two skins with the same layout *feel* different.
+- **(c) A motif set** — a small kit of topic-tied graphic devices reused across the video. Coveron used radar-sweep / shield / lock / breach-alert chips. Motifs give a video visual identity beyond its accent color.
+
+Ship each new skin as a `skins/tokens.<name>.css` file whose header comment names its **mood + motifs**; start from `skins/_skin-template.css` (three labeled sections) and `skins/tokens.coveron.css` (the worked example).
+
 **Two house moods:**
 - **Light / warm** — cream paper (`#F4F2EC`) full frames, dark surfaces (`#14161B`) for lower-third bodies, blue (`#4F7CF7`) + warm-orange (`#F2A65A`) accents, **Manrope** display + **JetBrains Mono**. Friendly and approachable.
 - **Dark / cinematic** — near-black blue atmosphere (`#0A0C12`), glow-blue accents (`#5B8CFF` / `#9BD1FF`), **Instrument Serif** display. Moodier and tech-forward.

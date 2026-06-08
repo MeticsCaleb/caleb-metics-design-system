@@ -1,0 +1,36 @@
+/* ============================================================================
+   BRAND TOKENS — <SKIN NAME>   (copy to tokens.<name>.css per video)
+   A skin is a MOOD + MOTIF kit, not just color/font. Fill all three sections.
+   ============================================================================ */
+
+/* (a) TOKENS — the swappable mechanical layer. Pull --accent from the product's
+   real brand color; keep everything as var(--…), never hardcoded in clips. */
+:root{
+  --accent:        #FB411C;   /* product signature color */
+  --accent-2:      #FAC900;   /* optional secondary accent (use sparingly) */
+  --bg-dark:       #0A0A0A;
+  --bg-light:      #F7F7F8;
+  --text-on-dark:  #FFFFFF;
+  --text-on-light: #2A2A2A;
+  --muted:         #5A5C5F;
+  --hairline:      #323334;
+
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+
+  --radius-pill: 9999px;
+  --radius-card: 28px;
+
+  --safe: 96px;
+  --lower-third-bottom: 110px;
+
+  --ease-out: cubic-bezier(.2,.7,.2,1);
+}
+
+/* (b) MOOD — the atmosphere SOLID frames inherit. Describe it here and realize it
+   in the clip (radial glow / vignette / film-grain %, light vs cinematic, etc.).
+   e.g. "dark-cinematic: accent radial glow + vignette + ~6% film-grain". */
+
+/* (c) MOTIFS — the small set of topic-tied graphic devices reused across the video.
+   List them so every clip pulls from the same kit.
+   e.g. "radar-sweep, shield, lock, breach-alert chip". */
