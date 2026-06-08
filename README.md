@@ -66,6 +66,8 @@ Every graphic serves a beginner tutorial / review video. The viewer is a **compl
 
 Always full `https://meticsmedia.com/<slug>` links; bold the platform + offer up to the colon; the link stays the YouTube blue (`#3EA6FF`). On screen, the highlight box **frames the whole line** (don't guess a fixed position — inset it around the affiliate block so it stays centered as the link wraps).
 
+**The YouTube link-card is a template to *reproduce*, not rebuild.** `animation-kit/components/youtube-link-card.example.html` is the canonical watch-card; reproduce its **full anatomy** every time: video title → channel row (avatar + verified check + subscriber count + Subscribe) → action buttons → description box. Keep **Roboto**, the green **✅**, the **YouTube-blue** link (`#3EA6FF`), the **width-sweeping highlight box**, and the **cursor glide + tap**. The card may be placed **full-frame** OR as a **lower-third overlay panel**, but the internal anatomy stays intact. Canonical details: the verified badge is a **check in a neutral-gray circle** (not the spiky seal); the offer line uses the canonical affiliate form above (e.g. `✅ [Platform] (Exclusive Discount):`); and the avatar slot takes the real Metics glyph (`assets/Logos/MeticsMedia/icon_white.png`, centered with `object-fit:contain`).
+
 ---
 
 ## VISUAL FOUNDATIONS
