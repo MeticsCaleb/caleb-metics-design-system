@@ -11,7 +11,7 @@ The defining idea: **constant system, swappable skin.** The structure, motion, a
 This system was built from one repository. The reader is encouraged to explore it directly for deeper fidelity:
 
 - **GitHub:** `mattebso/metics-design-system` — https://github.com/mattebso/metics-design-system
-  - `DESIGN.md` — the channel's look, rules, and brand model (the style bible).
+  - `README.md` — this file: the channel's look, rules, and brand model (the style bible).
   - `animation-kit/` — the render-safe HTML harness (vanilla JS, `t`-driven, 1920×1080→4K). **Strict technical contract.**
   - `examples/` — two reference style sets (light + warm, dark + cinematic), five archetypes each. Technical references, *not* visual templates.
   - `assets/` — the editor's reusable library: logos, emojis, device mockups, transitions, graphics.
@@ -95,6 +95,22 @@ Always full `https://meticsmedia.com/<slug>` links; bold the platform + offer up
 **Hover / press states.** These are *render* graphics, not an interactive product, so there are no true hover/press states. Where a clip *simulates* UI interaction (the YouTube link-on-screen card), the "press" is a small cursor **tap** offset (`~6px`) and a highlight box that **sweeps** in width to draw the eye to the clickable link. In the design-system UI kit (showcase only), interactive controls darken the accent on hover and shrink ~2% on press.
 
 **Layout & safe zones (fixed rules).** Design at **1920×1080**, everything scales to 4K. Keep key content inside the **`--safe` 96px (5%) inset**. **Lower-thirds sit in the bottom ~20%**, ~80–140px in from the left and ~110px up from the bottom — clearing the YouTube caption strip. **Keep the center and lower-left clear** when a graphic sits over footage — that's where the presenter is on camera. Number-pops and explainers (which often run as full-frame SOLID cutaways) center freely.
+
+**Composition & safe zones (3×3 grid).** Model the frame as a 3×3 grid using spreadsheet coordinates — columns **A/B/C** left→right, rows **1/2/3** top→bottom:
+
+```
+        A            B            C
+   1 [        ] [ PRESENTER ] [        ]
+   2 [        ] [ PRESENTER ] [        ]
+   3 [        ] [          ] [  PiP   ]
+```
+
+- **The talking head lives in B1 + B2** (top-center, middle-center). These cells are **off-limits to overlay (ALPHA) graphics** unless a shot is explicitly framed otherwise.
+- **Overlay (ALPHA) graphics** may occupy **row 3** (lower third), **column A** (left third), **column C** (right third), or combinations — **never B1/B2**.
+- A complex graphic that can't live cleanly in an overlay zone becomes a **full-screen SOLID** cutaway instead.
+- **Full-screen (SOLID) graphics must keep cell C3 (bottom-right) clear** so the editor can drop a talking-head picture-in-picture there. Keep content centered/raised so nothing lands in C3.
+
+> The validator (`animation-kit/validate.js`) *could* later flag content overlapping **B1/B2** (alpha) or **C3** (solid) — an optional follow-up, not yet enforced.
 
 **Imagery vibe.** No stock photography. Imagery = **real product logos** (used as-is, never redrawn) + the channel's flat-emoji icon set + simple geometric inline SVG icons. The cinematic style adds film-grain + vignette for a warm-cool, slightly cinematic feel; the warm style is clean and paper-bright.
 
